@@ -1,0 +1,224 @@
+-- FINAL WORKING MIHawk FARM (Based on Debug Version)
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local player = Players.LocalPlayer
+
+local farmEnabled = false
+
+-- Clear UIs
+for i, gui in pairs(game.CoreGui:GetChildren()) do
+    if gui:IsA("ScreenGui") then gui:Destroy() end
+end
+
+-- Create UI (from working debug version)
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.CoreGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 280, 0, 150)
+mainFrame.Position = UDim2.new(0, 100, 0, 100)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Parent = screenGui
+
+-- Title Bar (Draggable)
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 25)
+titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(0.7, 0, 1, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Mihawk Farm - WORKING"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = titleBar
+titleLabel.Position = UDim2.new(0, 5, 0, 0)
+
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 25, 0, 25)
+closeButton.Position = UDim2.new(1, -25, 0, 0)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+closeButton.BorderSizePixel = 0
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.Parent = titleBar
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, -10, 0, 30)
+statusLabel.Position = UDim2.new(0, 5, 0, 35)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "Status: READY"
+statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+statusLabel.TextSize = 12
+statusLabel.Parent = mainFrame
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0.6, 0, 0, 30)
+toggleButton.Position = UDim2.new(0.2, 0, 0, 75)
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+toggleButton.BorderSizePixel = 0
+toggleButton.Text = "START FARM"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.TextSize = 12
+toggleButton.Parent = mainFrame
+
+-- Make draggable
+local dragStart, startPos, dragging = nil, nil, false
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+
+titleBar.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+closeButton.MouseButton1Click:Connect(function()
+    farmEnabled = false
+    screenGui:Destroy()
+end)
+
+-- WORKING FUNCTIONS (from debug version)
+local function pressKey(key)
+    VirtualInputManager:SendKeyEvent(true, key, false, nil)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, key, false, nil)
+end
+
+local function findMihawk()
+    local mihawk = Workspace:FindFirstChild("Main")
+    if mihawk then mihawk = mihawk:FindFirstChild("Characters") end
+    if mihawk then mihawk = mihawk:FindFirstChild("Glacier Isle") end
+    if mihawk then mihawk = mihawk:FindFirstChild("Mihawk") end
+    if mihawk then mihawk = mihawk:FindFirstChild("Mihawk") end
+    
+    if mihawk and mihawk:FindFirstChild("Humanoid") and mihawk.Humanoid.Health > 0 then
+        return mihawk
+    end
+    return nil
+end
+
+local function hasActiveQuest()
+    if not player:FindFirstChild("Quest") then return false end
+    for i, value in pairs(player.Quest:GetChildren()) do
+        if (value:IsA("StringValue") and value.Value ~= "") or (value:IsA("IntValue") and value.Value > 0) then
+            return true
+        end
+    end
+    return false
+end
+
+-- WORKING QUEST FUNCTION (from debug version)
+local function getQuest()
+    local questNPC = Workspace:FindFirstChild("Main")
+    if questNPC then questNPC = questNPC:FindFirstChild("NPCs") end
+    if questNPC then questNPC = questNPC:FindFirstChild("Quests") end
+    if questNPC then questNPC = questNPC:FindFirstChild("7") end
+    
+    if not questNPC then return false end
+    
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return false end
+    
+    local npcRoot = questNPC:FindFirstChild("HumanoidRootPart")
+    if not npcRoot then return false end
+    
+    -- This method worked in debug!
+    char:SetPrimaryPartCFrame(CFrame.new(npcRoot.Position + Vector3.new(0, 0, -2)))
+    char:SetPrimaryPartCFrame(CFrame.new(char.HumanoidRootPart.Position, npcRoot.Position))
+    task.wait(0.3)
+    
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, nil)
+    task.wait(0.5)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, nil)
+    
+    return true
+end
+
+local function farmMihawk()
+    local mihawk = findMihawk()
+    if not mihawk then return false end
+    
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return false end
+    
+    local mihawkRoot = mihawk:FindFirstChild("HumanoidRootPart")
+    if not mihawkRoot then return false end
+    
+    -- Teleport above (10 studs)
+    local hoverPos = mihawkRoot.Position + Vector3.new(0, 10, 0)
+    char:SetPrimaryPartCFrame(CFrame.new(hoverPos, hoverPos + Vector3.new(0, -1, 0)))
+    
+    -- Attack
+    pressKey(Enum.KeyCode.Z)
+    
+    return true
+end
+
+-- SIMPLE WORKING LOOP
+local function workingLoop()
+    while farmEnabled do
+        -- Get quest if needed
+        if not hasActiveQuest() then
+            statusLabel.Text = "Getting Quest..."
+            if getQuest() then
+                statusLabel.Text = "Quest Got - Farming"
+                task.wait(1)
+            else
+                statusLabel.Text = "Quest Failed"
+                task.wait(2)
+            end
+        else
+            -- Farm
+            if farmMihawk() then
+                local mihawk = findMihawk()
+                if mihawk then
+                    statusLabel.Text = "Farming - HP: " .. math.floor(mihawk.Humanoid.Health)
+                end
+            else
+                statusLabel.Text = "Mihawk Not Found"
+            end
+            task.wait(0.5)
+        end
+    end
+end
+
+toggleButton.MouseButton1Click:Connect(function()
+    farmEnabled = not farmEnabled
+    
+    if farmEnabled then
+        statusLabel.Text = "Starting WORKING Farm..."
+        toggleButton.Text = "STOP"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        spawn(workingLoop)
+    else
+        statusLabel.Text = "Stopped"
+        toggleButton.Text = "START FARM"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+    end
+end)
+
+print("ðŸŽ‰ FINAL WORKING MIHawk FARM LOADED!")
+print("âœ“ Based on debug version that worked")
+print("âœ“ Uses proven quest acceptance method")
+print("âœ“ Fast farming (0.5s loops)")
+print("âœ“ Draggable & closeable UI")
+print("ðŸš€ READY TO FARM!")
