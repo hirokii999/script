@@ -1,0 +1,102 @@
+local PLAYER = game:GetService("Players").LocalPlayer
+local GUI_PARENT = (game:GetService("CoreGui") or PLAYER:WaitForChild("PlayerGui"))
+
+-- Delete old UI if it exists
+if GUI_PARENT:FindFirstChild("HarvestController") then
+    GUI_PARENT.HarvestController:Destroy()
+end
+
+-- [[ GUI SETUP ]] --
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local ToggleBtn = Instance.new("TextButton")
+local StatusLabel = Instance.new("TextLabel")
+local UICorner = Instance.new("UICorner")
+
+ScreenGui.Name = "HarvestController"
+ScreenGui.Parent = GUI_PARENT
+ScreenGui.ResetOnSpawn = false
+
+-- Main Frame
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+MainFrame.Position = UDim2.new(0.5, -80, 0.4, 0)
+MainFrame.Size = UDim2.new(0, 160, 0, 130)
+MainFrame.Active = true
+MainFrame.Draggable = true 
+
+local FrameCorner = UICorner:Clone()
+FrameCorner.Parent = MainFrame
+
+-- Title
+Title.Parent = MainFrame
+Title.BackgroundTransparency = 1
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "CROP BOT"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 14
+
+-- The ON/OFF Button
+ToggleBtn.Name = "ToggleBtn"
+ToggleBtn.Parent = MainFrame
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+ToggleBtn.Position = UDim2.new(0.1, 0, 0.35, 0)
+ToggleBtn.Size = UDim2.new(0.8, 0, 0.35, 0)
+ToggleBtn.Font = Enum.Font.GothamSemibold
+ToggleBtn.Text = "OFF"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.TextSize = 18
+local BtnCorner = UICorner:Clone()
+BtnCorner.Parent = ToggleBtn
+
+-- Status
+StatusLabel.Parent = MainFrame
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Position = UDim2.new(0, 0, 0.75, 0)
+StatusLabel.Size = UDim2.new(1, 0, 0, 25)
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.Text = "System Idle"
+StatusLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+StatusLabel.TextSize = 11
+
+-- [[ HARVEST LOGIC ]] --
+local uuids = {
+    "f2d8d2af-423e-4878-aac7-44abc6d6a5e6",
+    "5e7d694c-28d2-41b4-be4c-4f18a854d311",
+    "11128b77-faf0-470c-bd92-ee95dd607820",
+    "2ff02819-7005-4e89-8e6a-9604fc59462e",
+    "5abe9396-f517-4eb3-a5bc-fdadeee7d525"
+}
+
+local Remote = game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvents"):WaitForChild("HarvestFruit")
+local isRunning = false
+
+local function startHarvesting()
+    while isRunning do
+        StatusLabel.Text = "Harvesting..."
+        for _, id in ipairs(uuids) do
+            if not isRunning then break end
+            Remote:FireServer({{{ GrowthAnchorIndex = 1, Uuid = id }}})
+            task.wait(0.1)
+        end
+        StatusLabel.Text = "Waiting for growth..."
+        task.wait(5)
+    end
+end
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    isRunning = not isRunning
+    ToggleBtn.Text = isRunning and "ON" or "OFF"
+    ToggleBtn.BackgroundColor3 = isRunning and Color3.fromRGB(60, 200, 60) or Color3.fromRGB(200, 60, 60)
+    if isRunning then task.spawn(startHarvesting) end
+end)
+
+-- PRESS "INSERT" KEY TO HIDE/SHOW UI
+game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
+    if not processed and input.KeyCode == Enum.KeyCode.Insert then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
